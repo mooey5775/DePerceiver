@@ -4,6 +4,7 @@ import pytorch_lightning as pl
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.plugins import DDPPlugin
 
 from deperceiver.models.backbone import build_backbone
 from deperceiver.models.transformer import build_transformer
@@ -152,6 +153,7 @@ def main(args):
     trainer = Trainer(
         gpus=args.gpus,
         accelerator='ddp',
+        plugins=[DDPPlugin(find_unused_parameters=False)],
         precision=precision,
         default_root_dir=args.output_dir,
         gradient_clip_val=args.clip_max_norm,
