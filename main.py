@@ -93,7 +93,6 @@ def get_args_parser():
     # Trainer params
     parser.add_argument('--gpus', default=10, type=int, help='number of gpus')
     parser.add_argument('--run_name', default=None, type=str, help='name of the run')
-    parser.add_argument('--world_size', default=1, type=int, help='number of distributed processes')
 
     return parser
 
