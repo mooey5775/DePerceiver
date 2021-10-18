@@ -140,7 +140,7 @@ def main(args):
     )
 
     checkpoint_callback = ModelCheckpoint(
-        monitor='ap',
+        monitor='val/ap',
         mode='max',
         save_top_k=3,
     )
