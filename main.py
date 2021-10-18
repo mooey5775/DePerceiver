@@ -145,6 +145,7 @@ def main(args):
 
     trainer = Trainer(
         gpus=args.gpus,
+        accelerator='ddp',
         default_root_dir=args.output_dir,
         gradient_clip_val=args.clip_max_norm,
         max_epochs=args.epochs,
