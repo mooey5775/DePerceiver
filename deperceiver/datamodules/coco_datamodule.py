@@ -40,6 +40,7 @@ class CocoDataModule(pl.LightningDataModule):
             drop_last=False,
             collate_fn=collate_fn,
             num_workers=self.args.num_workers,
+            pin_memory=True,
         )
 
     # def test_dataloader(self):
