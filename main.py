@@ -153,7 +153,7 @@ def main(args):
         replace_sampler_ddp=False,
         callbacks=[lr_monitor, checkpoint_callback],
     )
-    wandb_logger.watch(model)
+    #wandb_logger.watch(model)
     
     trainer.fit(model, datamodule=datamodule)
 
