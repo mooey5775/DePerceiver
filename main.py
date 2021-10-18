@@ -93,6 +93,8 @@ def get_args_parser():
     # Trainer params
     parser.add_argument('--gpus', default=10, type=int, help='number of gpus')
     parser.add_argument('--run_name', default=None, type=str, help='name of the run')
+    parser.add_argument('--amp', action='store_true', help='use amp for mixed precision training')
+    parser.add_argument('--use_bfloat', action='store_true', help='use bfloat16 for mixed precision training')
 
     return parser
 
@@ -143,9 +145,14 @@ def main(args):
         save_top_k=3,
     )
 
+    precision = 32
+    if args.amp:
+        precision = 'bf16' if args.use_bfloat else 16
+
     trainer = Trainer(
         gpus=args.gpus,
         accelerator='ddp',
+        precision=precision,
         default_root_dir=args.output_dir,
         gradient_clip_val=args.clip_max_norm,
         max_epochs=args.epochs,
@@ -153,7 +160,7 @@ def main(args):
         replace_sampler_ddp=False,
         callbacks=[lr_monitor, checkpoint_callback],
     )
-    #wandb_logger.watch(model)
+    wandb_logger.watch(model)
     
     trainer.fit(model, datamodule=datamodule)
 
