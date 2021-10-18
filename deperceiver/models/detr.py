@@ -120,12 +120,12 @@ class DETR(pl.LightningModule):
 
         stats = self.evaluator.coco_eval['bbox'].stats
 
-        self.log('ap', stats[0])
-        self.log('ap50', stats[1])
-        self.log('ap75', stats[2])
-        self.log('ap_s', stats[3])
-        self.log('ap_m', stats[4])
-        self.log('ap_l', stats[5])
+        self.log('val/ap', stats[0])
+        self.log('val/ap50', stats[1])
+        self.log('val/ap75', stats[2])
+        self.log('val/ap_s', stats[3])
+        self.log('val/ap_m', stats[4])
+        self.log('val/ap_l', stats[5])
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         param_dicts = [
