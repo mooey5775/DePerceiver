@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from util import box_ops
+from deperceiver.util import box_ops
 
 class PostProcess(nn.Module):
     """ This module converts the model's output into the format expected by the coco api"""

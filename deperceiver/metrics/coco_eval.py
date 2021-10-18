@@ -16,7 +16,7 @@ from pycocotools.cocoeval import COCOeval
 from pycocotools.coco import COCO
 import pycocotools.mask as mask_util
 
-from util.misc import all_gather
+from deperceiver.util.misc import all_gather
 
 
 class CocoEvaluator(object):
@@ -62,12 +62,9 @@ class CocoEvaluator(object):
             coco_eval.accumulate()
 
     def summarize(self):
-        stats = {}
         for iou_type, coco_eval in self.coco_eval.items():
             print("IoU metric: {}".format(iou_type))
-            stats[iou_type] = coco_eval.summarize()
-
-        return stats
+            coco_eval.summarize()
 
     def prepare(self, predictions, iou_type):
         if iou_type == "bbox":

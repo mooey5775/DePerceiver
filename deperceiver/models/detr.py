@@ -7,9 +7,9 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from datamodules import get_coco_api_from_dataset
-from metrics.coco_eval import CocoEvaluator
-from util.misc import NestedTensor, nested_tensor_from_tensor_list, interpolate
+from deperceiver.datamodules import get_coco_api_from_dataset
+from deperceiver.metrics.coco_eval import CocoEvaluator
+from deperceiver.util.misc import NestedTensor, nested_tensor_from_tensor_list, interpolate
 
 from .postprocess import PostProcess
 
@@ -66,7 +66,7 @@ class DETR(pl.LightningModule):
         # Make torchscript happy
         return [{'pred_logits': a, 'pred_boxes': b} for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
 
-    def _step(self, batch, batch_idx):
+    def _step(self, batch, batch_idx, phase='train'):
         samples, targets = batch
         outputs = self(samples)
         loss_dict = self.criterion(outputs, targets)
@@ -74,14 +74,18 @@ class DETR(pl.LightningModule):
         losses = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
 
         loss_dict_unscaled = {f'{k}_unscaled': v for k, v in loss_dict.items()}
-        loss_dict_scaled = {k: v * weight_dict[k] for k, v in loss_dict.items()}
+        loss_dict_scaled = {k: v * weight_dict[k] for k, v in loss_dict.items() if k in weight_dict}
         losses_scaled = sum(loss_dict_scaled.values())
 
         loss_value = losses_scaled.item()
 
+        # Append prefix to loss_dicts
+        loss_dict_unscaled = {f'{phase}/{k}': v for k, v in loss_dict_unscaled.items()}
+        loss_dict_scaled = {f'{phase}/{k}': v for k, v in loss_dict_scaled.items()}
+
         self.log_dict(loss_dict_unscaled)
         self.log_dict(loss_dict_scaled)
-        self.log('loss', loss_value)
+        self.log(f'{phase}/loss', loss_value)
 
         return losses, loss_value, outputs
 
@@ -96,11 +100,11 @@ class DETR(pl.LightningModule):
 
     def on_validation_epoch_start(self) -> None:
         base_ds = get_coco_api_from_dataset(self.trainer.datamodule.dataset_val)
-        self.evaluator = CocoEvaluator(base_ds, ('bbox'))
+        self.evaluator = CocoEvaluator(base_ds, ('bbox',))
 
     def validation_step(self, batch, batch_idx):
         samples, targets = batch
-        losses, loss_value, outputs = self._step(batch, batch_idx)
+        losses, loss_value, outputs = self._step(batch, batch_idx, phase='val')
 
         orig_target_sizes = torch.stack([t["orig_size"] for t in targets], dim=0)
 
@@ -110,21 +114,29 @@ class DETR(pl.LightningModule):
 
     def on_validation_epoch_end(self) -> None:
         self.evaluator.synchronize_between_processes()
-        if not self.global_rank == 0:
-            return
 
         self.evaluator.accumulate()
-        stats = self.evaluator.summarize()
+        self.evaluator.summarize()
 
-        self.log('ap', stats['bbox'][0])
-        self.log('ap50', stats['bbox'][1])
-        self.log('ap75', stats['bbox'][2])
-        self.log('ap_s', stats['bbox'][3])
-        self.log('ap_m', stats['bbox'][4])
-        self.log('ap_l', stats['bbox'][5])
+        stats = self.evaluator.coco_eval['bbox'].stats
+
+        self.log('ap', stats[0])
+        self.log('ap50', stats[1])
+        self.log('ap75', stats[2])
+        self.log('ap_s', stats[3])
+        self.log('ap_m', stats[4])
+        self.log('ap_l', stats[5])
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
-        self.optimizer = torch.optim.AdamW(self.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
+        param_dicts = [
+            {"params": [p for n, p in self.named_parameters() if 'backbone' not in n and p.requires_grad]},
+            {
+                "params": [p for n, p in self.named_parameters() if 'backbone' in n and p.requires_grad],
+                "lr": self.args.lr_backbone,
+            }
+        ]
+
+        self.optimizer = torch.optim.AdamW(param_dicts, lr=self.args.lr, weight_decay=self.args.weight_decay)
         lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=self.args.lr_drop, verbose=True)
 
         return [self.optimizer], [{"scheduler": lr_scheduler, "interval": "epoch"}]

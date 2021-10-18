@@ -5,8 +5,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from util import box_ops
-from util.misc import accuracy
+from deperceiver.util import box_ops
+from deperceiver.util.misc import accuracy, get_world_size
 
 
 class SetCriterion(pl.LightningModule):
@@ -135,7 +135,7 @@ class SetCriterion(pl.LightningModule):
         num_boxes = torch.as_tensor([num_boxes], dtype=torch.float, device=next(iter(outputs.values())).device)
         if torch.distributed.is_available():
             torch.distributed.all_reduce(num_boxes)
-        num_boxes = torch.clamp(num_boxes / self.trainer.world_size, min=1).item()
+        num_boxes = torch.clamp(num_boxes / get_world_size(), min=1).item()
 
         # Compute all the requested losses
         losses = {}

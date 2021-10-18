@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import DataLoader, DistributedSampler
 
 from . import build_dataset
-from util.misc import collate_fn
+from deperceiver.util.misc import collate_fn
 
 
 class CocoDataModule(pl.LightningDataModule):
@@ -14,7 +14,7 @@ class CocoDataModule(pl.LightningDataModule):
 
         self.dataset_train = build_dataset(image_set='train', args=args)
         self.dataset_val = build_dataset(image_set='val', args=args)
-        self.dataset_test = build_dataset(image_set='test', args=args)
+        # self.dataset_test = build_dataset(image_set='test', args=args)
 
     def train_dataloader(self):
         sampler_train = DistributedSampler(self.dataset_train)
@@ -41,13 +41,13 @@ class CocoDataModule(pl.LightningDataModule):
             num_workers=self.args.num_workers,
         )
 
-    def test_dataloader(self):
-        sampler_test = DistributedSampler(self.dataset_test)
-        return DataLoader(
-            self.dataset_test,
-            self.args.batch_size,
-            sampler=sampler_test,
-            drop_last=False,
-            collate_fn=collate_fn,
-            num_workers=self.args.num_workers,
-        )
+    # def test_dataloader(self):
+    #     sampler_test = DistributedSampler(self.dataset_test)
+    #     return DataLoader(
+    #         self.dataset_test,
+    #         self.args.batch_size,
+    #         sampler=sampler_test,
+    #         drop_last=False,
+    #         collate_fn=collate_fn,
+    #         num_workers=self.args.num_workers,
+    #     )

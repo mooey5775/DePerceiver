@@ -7,7 +7,7 @@ import torchvision
 from torch import nn
 from torchvision.models._utils import IntermediateLayerGetter
 
-from util.misc import NestedTensor
+from deperceiver.util.misc import NestedTensor
 
 from .position_encoding import build_position_encoding
 

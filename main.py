@@ -5,12 +5,12 @@ from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
-from models.backbone import build_backbone
-from models.transformer import build_transformer
-from models.detr import DETR
-from losses.matcher import build_matcher
-from losses.set_criterion import SetCriterion
-from datamodules.coco_datamodule import CocoDataModule
+from deperceiver.models.backbone import build_backbone
+from deperceiver.models.transformer import build_transformer
+from deperceiver.models.detr import DETR
+from deperceiver.losses.matcher import build_matcher
+from deperceiver.losses.set_criterion import SetCriterion
+from deperceiver.datamodules.coco_datamodule import CocoDataModule
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
@@ -149,8 +149,14 @@ def main(args):
         gradient_clip_val=args.clip_max_norm,
         max_epochs=args.epochs,
         logger=wandb_logger,
+        replace_sampler_ddp=False,
         callbacks=[lr_monitor, checkpoint_callback],
     )
     wandb_logger.watch(model)
     
     trainer.fit(model, datamodule=datamodule)
+
+if __name__ == '__main__':
+    parser = get_args_parser()
+    args = parser.parse_args()
+    main(args)
