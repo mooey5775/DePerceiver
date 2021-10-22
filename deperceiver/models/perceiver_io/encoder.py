@@ -3,7 +3,7 @@ from typing import Optional
 import torch
 from torch import nn
 
-from perceiver_io.attention import CrossAttention, SelfAttention
+from deperceiver.models.perceiver_io.attention import CrossAttention, SelfAttention
 
 
 class PerceiverEncoder(nn.Module):

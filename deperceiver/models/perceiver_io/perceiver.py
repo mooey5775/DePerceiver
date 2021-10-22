@@ -3,8 +3,8 @@ from typing import Optional
 import torch
 from torch import nn
 
-from perceiver_io.decoders import BasePerceiverDecoder
-from perceiver_io.encoder import PerceiverEncoder
+from deperceiver.models.perceiver_io.decoders import BasePerceiverDecoder
+from deperceiver.models.perceiver_io.encoder import PerceiverEncoder
 
 
 class PerceiverIO(nn.Module):

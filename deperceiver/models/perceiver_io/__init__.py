@@ -1,5 +1,5 @@
-from perceiver_io.encoder import PerceiverEncoder
-from perceiver_io.decoders import (ClassificationDecoder,
+from deperceiver.models.perceiver_io.encoder import PerceiverEncoder
+from deperceiver.models.perceiver_io.decoders import (ClassificationDecoder,
                                    PerceiverDecoder,
                                    ProjectionDecoder)
-from perceiver_io.perceiver import PerceiverIO
+from deperceiver.models.perceiver_io.perceiver import PerceiverIO
