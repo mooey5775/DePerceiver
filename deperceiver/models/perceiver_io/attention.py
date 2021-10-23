@@ -74,12 +74,12 @@ class MultiHeadAttention(nn.Module):
         attention = (q @ k.transpose(-2, -1) / self.scale)
         if attention_mask is not None:
             min_value = torch.finfo(attention.dtype).min
-            extended_mask = (1 - attention_mask) * min_value
+            extended_mask = attention_mask * min_value
             attention = attention + extended_mask
         attention = attention.softmax(dim=-1)
         attention = self.dropout(attention)
         if attention_mask is not None:
-            attention = attention.masked_fill((1 - attention_mask).to(torch.bool), value=0)
+            attention = attention.masked_fill(attention_mask.to(torch.bool), value=0)
         weighted = rearrange(attention @ v, 'b n s h -> b s (n h)')
         return self.projection(weighted)
 
