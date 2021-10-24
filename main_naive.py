@@ -96,6 +96,8 @@ def get_args_parser():
     parser.add_argument('--run_name', default=None, type=str, help='name of the run')
     parser.add_argument('--amp', action='store_true', help='use amp for mixed precision training')
     parser.add_argument('--use_bfloat', action='store_true', help='use bfloat16 for mixed precision training')
+    parser.add_argument('--resume_from_checkpoint', default=None, type=str,
+                        help='resume from checkpoint. does not yet reload weights')
 
     return parser
 
@@ -179,6 +181,7 @@ def main(args):
         logger=wandb_logger,
         replace_sampler_ddp=False,
         callbacks=[lr_monitor, checkpoint_callback],
+        resume_from_checkpoint=args.resume_from_checkpoint,
     )
     wandb_logger.watch(model)
     
