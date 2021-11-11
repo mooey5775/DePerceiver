@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torchvision
 from torch import nn
 from torchvision.datasets import CIFAR10
+from torchvision import transforms
 from torchmetrics import Accuracy
 
 from deperceiver.models.perceiver_io import *
@@ -40,18 +41,35 @@ class DebugModel(pl.LightningModule):
 
         self.perceiver = PerceiverIO(self.encoder, self.decoder)
 
+        train_transforms = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.RandAugment(),
+            transforms.Normalize(
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225],
+            ),
+        ])        
+
+        test_transforms = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225],
+            ),
+        ])   
+
         self.train_dataset = CIFAR10(
             root="./data",
             train=True,
             download=True,
-            transform=torchvision.transforms.ToTensor(),
+            transform=train_transforms,
         )
 
         self.test_dataset = CIFAR10(
             root="./data",
             train=False,
             download=True,
-            transform=torchvision.transforms.ToTensor(),
+            transform=test_transforms,
         )
 
         self.accuracy = Accuracy()
