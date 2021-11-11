@@ -32,3 +32,5 @@ __pycache__
 .ipynb_checkpoints
 
 wandb
+data
+checkpoints

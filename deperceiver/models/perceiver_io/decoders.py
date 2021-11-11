@@ -91,7 +91,6 @@ class ClassificationDecoder(BasePerceiverDecoder):
         latent_dim: int,
         widening_factor: int = 1,
         num_heads: int = 1,
-        head_dim: Optional[int] = None
     ):
         super().__init__()
         self.task_ids = nn.Parameter(torch.randn(1, num_classes))
@@ -100,7 +99,6 @@ class ClassificationDecoder(BasePerceiverDecoder):
             query_dim=num_classes,
             widening_factor=widening_factor,
             num_heads=num_heads,
-            head_dim=head_dim,
             projection_dim=None,
             use_query_residual=False
         )
