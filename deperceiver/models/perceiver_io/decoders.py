@@ -118,7 +118,9 @@ class PerceiverMultipleDecoder(BasePerceiverDecoder):
         qk_out_dim: Optional[int] = None,
         v_out_dim: Optional[int] = None,
         projection_dim: Optional[int] = None,
-        use_query_residual: bool = False
+        use_query_residual: bool = False,
+        return_intermediate: bool = False,
+        norm = None,
     ) -> None:
         super().__init__()
         self.layers = nn.ModuleList(
@@ -137,6 +139,8 @@ class PerceiverMultipleDecoder(BasePerceiverDecoder):
                 for _ in range(num_layers)
             ]
         )
+        self.return_intermediate = return_intermediate
+        self.norm = norm
 
     def forward(
         self,
@@ -145,15 +149,30 @@ class PerceiverMultipleDecoder(BasePerceiverDecoder):
         latents: torch.Tensor,
         q_mask: Optional[torch.Tensor] = None
     ):
-        tgt = torch.zeros_like(query)
+        output = torch.zeros_like(query)
+
+        intermediate = []
+
         for layer in self.layers:
-            tgt = layer(
-                tgt=tgt,
+            output = layer(
+                tgt=output,
                 query=query,
                 latents=latents,
                 q_mask=q_mask
             )
-        return tgt
+            if self.return_intermediate:
+                intermediate.append(self.norm(output))
+
+        if self.norm is not None:
+            output = self.norm(output)
+            if self.return_intermediate:
+                intermediate.pop()
+                intermediate.append(output)
+
+        if self.return_intermediate:
+            return torch.stack(intermediate)
+
+        return output.unsqueeze(0)
 
 
 class PerceiverDecoder(BasePerceiverDecoder):
@@ -198,7 +217,7 @@ class PerceiverDecoder(BasePerceiverDecoder):
             inputs_q=query,
             attention_mask=q_mask
         )
-        return self.projection(outputs)
+        return self.projection(outputs).unsqueeze(0)
 
 
 class ClassificationDecoder(BasePerceiverDecoder):

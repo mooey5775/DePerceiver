@@ -63,15 +63,15 @@ class NaiveDePerceiver(pl.LightningModule):
         outputs_class = self.class_embed(hs)
         outputs_coord = self.bbox_embed(hs).sigmoid()
 
-        out = {'pred_logits': outputs_class, 'pred_boxes': outputs_coord}
-        # if self.aux_loss:
-        #     out['aux_outputs'] = self._set_aux_loss(outputs_class, outputs_coord)
+        out = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1]}
+        if self.aux_loss:
+            out['aux_outputs'] = self._set_aux_loss(outputs_class, outputs_coord)
         return out
 
-    # @torch.jit.unused
-    # def _set_aux_loss(self, outputs_class, outputs_coord):
-    #     # Make torchscript happy
-    #     return [{'pred_logits': a, 'pred_boxes': b} for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
+    @torch.jit.unused
+    def _set_aux_loss(self, outputs_class, outputs_coord):
+        # Make torchscript happy
+        return [{'pred_logits': a, 'pred_boxes': b} for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
 
     def _step(self, batch, batch_idx, phase='train'):
         samples, targets = batch
