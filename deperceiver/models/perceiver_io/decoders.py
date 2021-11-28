@@ -120,7 +120,6 @@ class PerceiverMultipleDecoder(BasePerceiverDecoder):
         projection_dim: Optional[int] = None,
         use_query_residual: bool = False,
         return_intermediate: bool = False,
-        norm = None,
     ) -> None:
         super().__init__()
         self.layers = nn.ModuleList(
@@ -140,7 +139,7 @@ class PerceiverMultipleDecoder(BasePerceiverDecoder):
             ]
         )
         self.return_intermediate = return_intermediate
-        self.norm = norm
+        self.norm = nn.LayerNorm(query_dim)
 
     def forward(
         self,
