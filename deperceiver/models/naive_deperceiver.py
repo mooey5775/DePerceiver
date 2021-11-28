@@ -26,7 +26,6 @@ class NaiveDePerceiver(pl.LightningModule):
         num_classes: int,
         num_queries: int,
         args: Any,
-        aux_loss: bool = False,
     ) -> None:
         super().__init__()
         self.num_queries = num_queries
@@ -37,7 +36,7 @@ class NaiveDePerceiver(pl.LightningModule):
         self.query_embed = nn.Embedding(num_queries, hidden_dim)
         self.input_proj = nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=1)
         self.backbone = backbone
-        self.aux_loss = aux_loss
+        self.aux_loss = args.aux_loss
         self.args = args
         self.criterion  = criterion
         self.postprocess = PostProcess()
