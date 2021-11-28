@@ -109,7 +109,7 @@ def main(args):
     # Build our model
     backbone = build_backbone(args)
     perceiver_encoder = PerceiverEncoder(
-        num_latents=1024,
+        num_latents=1500,
         latent_dim=256,
         input_dim=256,
         num_self_attn_per_block=args.enc_layers_per_block,
