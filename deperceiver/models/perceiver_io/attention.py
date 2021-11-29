@@ -241,7 +241,7 @@ class CrossAttention(nn.Module):
         """
         attention = self.attention(
             inputs_kv=self.kv_layer_norm(inputs_kv),
-            inputs_q=self.q_layer_norm(inputs_q if not pos_embed else inputs_q + pos_embed),
+            inputs_q=self.q_layer_norm(inputs_q if pos_embed is None else inputs_q + pos_embed),
             attention_mask=attention_mask
         )
         attention = self.dropout(attention)
