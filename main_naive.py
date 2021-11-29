@@ -36,6 +36,8 @@ def get_args_parser():
                         help="Type of positional embedding to use on top of the image features")
 
     # * Transformer
+    parser.add_argument('--num_latents', default=1024, type=int,
+                        help="Number of latents to use")
     parser.add_argument('--enc_blocks', default=3, type=int,
                         help="Number of encoding blocks in the transformer")
     parser.add_argument('--enc_layers_per_block', default=6, type=int,
@@ -109,7 +111,7 @@ def main(args):
     # Build our model
     backbone = build_backbone(args)
     perceiver_encoder = PerceiverEncoder(
-        num_latents=1500,
+        num_latents=args.num_latents,
         latent_dim=256,
         input_dim=256,
         num_self_attn_per_block=args.enc_layers_per_block,
