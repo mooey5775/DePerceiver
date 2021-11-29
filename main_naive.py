@@ -120,16 +120,18 @@ def main(args):
         self_attn_widening_factor=1,
     )
 
-    # perceiver_decoder = PerceiverDecoder(
-    #     latent_dim=256,
-    #     query_dim=256,
-    # )
-    perceiver_decoder = PerceiverMultipleDecoder(
-        latent_dim=256,
-        query_dim=256,
-        num_layers=args.dec_layers,
-        return_intermediate=args.aux_loss,
-    )
+    if args.aux_loss:
+        perceiver_decoder = PerceiverMultipleDecoder(
+            latent_dim=256,
+            query_dim=256,
+            num_layers=args.dec_layers,
+            return_intermediate=args.aux_loss,
+        )
+    else:
+        perceiver_decoder = PerceiverDecoder(
+            latent_dim=256,
+            query_dim=256,
+        )
 
     perceiver = PerceiverIO(
         perceiver_encoder, perceiver_decoder
