@@ -99,7 +99,8 @@ class PerceiverMultipleDecoderLayer(BasePerceiverDecoder):
         tgt = self.norm1(tgt)
         outputs = self.cross_attention(
             inputs_kv=latents,
-            inputs_q=(tgt + query),
+            inputs_q=tgt,
+            pos_embed=query,
             attention_mask=q_mask
         )
         return self.projection(outputs)
