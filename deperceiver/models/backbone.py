@@ -4,6 +4,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 import torchvision
+import math
 from torch import nn
 from torchvision.models._utils import IntermediateLayerGetter
 
@@ -61,6 +62,7 @@ class BackboneBase(pl.LightningModule):
         num_channels: int,
         train_backbone: bool = True,
         return_interm_layers: bool = False,
+        downsample_factor: int = 32,
     ) -> None:
         super().__init__()
         for name, parameter in backbone.named_parameters():
@@ -68,6 +70,9 @@ class BackboneBase(pl.LightningModule):
                 parameter.requires_grad_(False)
         if return_interm_layers:
             return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
+        elif downsample_factor:
+            layer_num = int(math.log(downsample_factor) / math.log(2)) - 1
+            return_layers = {f"layer{layer_num}": "0"}
         else:
             return_layers = {'layer4': "0"}
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
@@ -92,13 +97,14 @@ class Backbone(BackboneBase):
         train_backbone: bool = True,
         return_interm_layers: bool = False,
         dilation: bool = False,
+        downsample_factor: int = 32,
     ) -> None:
         backbone = getattr(torchvision.models, model_name)(
             replace_stride_with_dilation=[False, False, dilation],
             pretrained=True, norm_layer=FrozenBatchNorm2d
         )
         num_channels = 512 if model_name in ('resnet18', 'resnet34') else 2048
-        super().__init__(backbone, num_channels, train_backbone=train_backbone, return_interm_layers=return_interm_layers)
+        super().__init__(backbone, num_channels, train_backbone=train_backbone, return_interm_layers=return_interm_layers, downsample_factor=downsample_factor)
 
 
 class Joiner(pl.LightningModule):
@@ -129,6 +135,6 @@ def build_backbone(args):
     position_embedding = build_position_encoding(args)
     train_backbone = args.lr_backbone > 0
     return_interm_layers = args.masks
-    backbone = Backbone(args.backbone, train_backbone, return_interm_layers, args.dilation)
+    backbone = Backbone(args.backbone, train_backbone, return_interm_layers, args.dilation, args.downsample_factor)
     model = Joiner(backbone, position_embedding)
     return model
