@@ -34,7 +34,12 @@ class NaiveDePerceiver(pl.LightningModule):
         self.class_embed = nn.Linear(hidden_dim, num_classes + 1)
         self.bbox_embed = MLP(hidden_dim, hidden_dim, 4, 3)
         self.query_embed = nn.Embedding(num_queries, hidden_dim)
-        self.input_proj = nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=1)
+        self.multiscale = args.multiscale
+        if not self.multiscale:
+            self.input_proj = nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=1)
+        else:
+            ## add code for multi-scale backbone
+            self.input_proj = nn.ModuleList([nn.Conv2d(backbone.num_channels[i], hidden_dim, kernel_size=1) for i in range(3)])
         self.backbone = backbone
         self.aux_loss = args.aux_loss
         self.args = args
@@ -46,17 +51,42 @@ class NaiveDePerceiver(pl.LightningModule):
             samples = nested_tensor_from_tensor_list(samples)
         features, pos = self.backbone(samples)
 
-        src, mask = features[-1].decompose()
-        assert mask is not None
+        if not self.multiscale:
+            src, mask = features[-1].decompose()
+            assert mask is not None
 
-        projected_src = self.input_proj(src)
-        bs, c, h, w = projected_src.shape
-        projected_src = projected_src.flatten(2).permute(0, 2, 1)
-        pos_embed = pos[-1].flatten(2).permute(0, 2, 1)
-        query_embed = self.query_embed.weight.unsqueeze(0).repeat(bs, 1, 1)
-        mask = mask.flatten(1).to(dtype=torch.int32)
+            projected_src = self.input_proj(src)
+            bs, c, h, w = projected_src.shape
+            projected_src = projected_src.flatten(2).permute(0, 2, 1)
+            pos_embed = pos[-1].flatten(2).permute(0, 2, 1)
+            query_embed = self.query_embed.weight.unsqueeze(0).repeat(bs, 1, 1)
+            mask = mask.flatten(1).to(dtype=torch.int32)
+            perceiver_input = projected_src + pos_embed
+        else:
+            srcs = []
+            masks = []
+            for feature in features:
+                src, mask_scale = feature.decompose()
+                assert mask_scale is not None
+                srcs.append(src)
+                masks.append(mask_scale)            
 
-        hs = self.perceiver(projected_src + pos_embed, query_embed, mask)
+            multiscale_inputs = []
+            mask_all_scales = []
+            for i, model in enumerate(self.input_proj):
+                projected_src = model(src[i])
+                bs, c, h, w = projected_src.shape
+                projected_src = projected_src.flatten(2).permute(0, 2, 1)
+                pos_embed = pos[-1].flatten(2).permute(0, 2, 1)
+                query_embed = self.query_embed.weight.unsqueeze(0).repeat(bs, 1, 1)
+                mask_scale = masks[i].flatten(1).to(dtype=torch.int32)
+                multiscale_inputs.append(projected_src + pos_embed)
+                mask_all_scales.append(mask_scale)
+
+            perceiver_input = torch.cat(multiscale_inputs, dim=1)
+            mask = torch.cat(mask_all_scales, dim=1)
+
+        hs = self.perceiver(perceiver_input, query_embed, mask)
         # hs = self.transformer(projected_src, mask, self.query_embed.weight, pos[-1])[0]
 
         outputs_class = self.class_embed(hs)

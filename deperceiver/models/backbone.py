@@ -70,6 +70,7 @@ class BackboneBase(pl.LightningModule):
         train_backbone: bool = True,
         return_interm_layers: bool = False,
         downsample_factor: int = 32,
+        multiscale: bool = False,
     ) -> None:
         super().__init__()
         assert downsample_factor in self.DOWNSAMPLE_DICT
@@ -79,6 +80,8 @@ class BackboneBase(pl.LightningModule):
                 parameter.requires_grad_(False)
         if return_interm_layers:
             return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
+        elif multiscale:
+            return_layers = {self.DOWNSAMPLE_DICT[downsample_factor][0]: "0" for downsample_factor in [32, 16, 8]}
         elif downsample_factor:
             return_layers = {self.DOWNSAMPLE_DICT[downsample_factor][0]: "0"}
         # else:
@@ -86,7 +89,10 @@ class BackboneBase(pl.LightningModule):
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
         # Ignore this - assume we use ResNet50
         # self.num_channels = num_channels
-        self.num_channels = self.DOWNSAMPLE_DICT[downsample_factor][1]
+        if multiscale:
+            self.num_channels = [self.DOWNSAMPLE_DICT[downsample_factor][1] for downsample_factor in [32, 16, 8]]
+        else:
+            self.num_channels = self.DOWNSAMPLE_DICT[downsample_factor][1]
 
     def forward(self, tensor_list: NestedTensor) -> NestedTensor:
         xs = self.body(tensor_list.tensors)
@@ -108,13 +114,14 @@ class Backbone(BackboneBase):
         return_interm_layers: bool = False,
         dilation: bool = False,
         downsample_factor: int = 32,
+        multiscale: bool = False,
     ) -> None:
         backbone = getattr(torchvision.models, model_name)(
             replace_stride_with_dilation=[False, False, dilation],
             pretrained=True, norm_layer=FrozenBatchNorm2d
         )
         num_channels = 512 if model_name in ('resnet18', 'resnet34') else 2048
-        super().__init__(backbone, num_channels, train_backbone=train_backbone, return_interm_layers=return_interm_layers, downsample_factor=downsample_factor)
+        super().__init__(backbone, num_channels, train_backbone=train_backbone, return_interm_layers=return_interm_layers, downsample_factor=downsample_factor, multiscale=multiscale)
 
 
 class Joiner(pl.LightningModule):
@@ -145,6 +152,6 @@ def build_backbone(args):
     position_embedding = build_position_encoding(args)
     train_backbone = args.lr_backbone > 0
     return_interm_layers = args.masks
-    backbone = Backbone(args.backbone, train_backbone, return_interm_layers, args.dilation, args.downsample_factor)
+    backbone = Backbone(args.backbone, train_backbone, return_interm_layers, args.dilation, args.downsample_factor, args.multiscale)
     model = Joiner(backbone, position_embedding)
     return model
