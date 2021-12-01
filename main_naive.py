@@ -193,12 +193,12 @@ def main(args):
         default_root_dir=args.output_dir,
         gradient_clip_val=args.clip_max_norm,
         max_epochs=args.epochs,
-        logger=wandb_logger,
+        logger=False,
         replace_sampler_ddp=False,
         callbacks=[lr_monitor, checkpoint_callback],
         resume_from_checkpoint=args.resume_from_checkpoint,
     )
-    wandb_logger.watch(model)
+    # wandb_logger.watch(model)
     
     trainer.fit(model, datamodule=datamodule)
 

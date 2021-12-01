@@ -74,10 +74,10 @@ class NaiveDePerceiver(pl.LightningModule):
             multiscale_inputs = []
             mask_all_scales = []
             for i, model in enumerate(self.input_proj):
-                projected_src = model(src[i])
+                projected_src = model(srcs[i])
                 bs, c, h, w = projected_src.shape
                 projected_src = projected_src.flatten(2).permute(0, 2, 1)
-                pos_embed = pos[-1].flatten(2).permute(0, 2, 1)
+                pos_embed = pos[i].flatten(2).permute(0, 2, 1)
                 query_embed = self.query_embed.weight.unsqueeze(0).repeat(bs, 1, 1)
                 mask_scale = masks[i].flatten(1).to(dtype=torch.int32)
                 multiscale_inputs.append(projected_src + pos_embed)
@@ -87,6 +87,7 @@ class NaiveDePerceiver(pl.LightningModule):
             mask = torch.cat(mask_all_scales, dim=1)
 
         hs = self.perceiver(perceiver_input, query_embed, mask)
+        print('hs shape', hs.shape)
         # hs = self.transformer(projected_src, mask, self.query_embed.weight, pos[-1])[0]
 
         outputs_class = self.class_embed(hs)
