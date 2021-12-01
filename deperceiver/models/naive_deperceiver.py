@@ -87,7 +87,6 @@ class NaiveDePerceiver(pl.LightningModule):
             mask = torch.cat(mask_all_scales, dim=1)
 
         hs = self.perceiver(perceiver_input, query_embed, mask)
-        print('hs shape', hs.shape)
         # hs = self.transformer(projected_src, mask, self.query_embed.weight, pos[-1])[0]
 
         outputs_class = self.class_embed(hs)
