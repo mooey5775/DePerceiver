@@ -39,7 +39,8 @@ class NaiveDePerceiver(pl.LightningModule):
             self.input_proj = nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=1)
         else:
             ## add code for multi-scale backbone
-            self.input_proj = nn.ModuleList([nn.Conv2d(backbone.num_channels[i], hidden_dim, kernel_size=1) for i in range(3)])
+            self.input_proj = nn.ModuleList([nn.Conv2d(backbone.num_channels[i], hidden_dim - 4, kernel_size=1) for i in range(3)])
+            self.scale_embedding = nn.ModuleList([nn.Embedding(1, 4) for i in range(3)])
         self.backbone = backbone
         self.aux_loss = args.aux_loss
         self.args = args
@@ -80,7 +81,11 @@ class NaiveDePerceiver(pl.LightningModule):
                 pos_embed = pos[i].flatten(2).permute(0, 2, 1)
                 query_embed = self.query_embed.weight.unsqueeze(0).repeat(bs, 1, 1)
                 mask_scale = masks[i].flatten(1).to(dtype=torch.int32)
-                multiscale_inputs.append(projected_src + pos_embed)
+                multiscale_input = projected_src + pos_embed
+
+                # Get scale embedding
+                scale_embedding = self.scale_embedding[i].weight.unsqueeze(0).repeat(bs, h * w, 1)
+                multiscale_inputs.append(torch.cat([multiscale_input, scale_embedding], dim=2))
                 mask_all_scales.append(mask_scale)
 
             perceiver_input = torch.cat(multiscale_inputs, dim=1)
