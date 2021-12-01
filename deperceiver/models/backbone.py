@@ -81,7 +81,7 @@ class BackboneBase(pl.LightningModule):
         if return_interm_layers:
             return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
         elif multiscale:
-            return_layers = {self.DOWNSAMPLE_DICT[downsample_factor][0]: "0" for downsample_factor in [32, 16, 8]}
+            return_layers = {self.DOWNSAMPLE_DICT[downsample_factor][0]: str(i) for i, downsample_factor in enumerate([32, 16, 8])}
         elif downsample_factor:
             return_layers = {self.DOWNSAMPLE_DICT[downsample_factor][0]: "0"}
         # else:

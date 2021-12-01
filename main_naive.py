@@ -36,6 +36,7 @@ def get_args_parser():
                         help="Type of positional embedding to use on top of the image features")
     parser.add_argument('--downsample_factor', default=32, type=int,
                         help="Factor to use for downsampling the image features in backbone (default 32)")
+    parser.add_argument('--multiscale', action='store_true', help='If true, we use multiscale backbone')
 
     # * Transformer
     parser.add_argument('--num_latents', default=1024, type=int,
