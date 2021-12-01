@@ -56,6 +56,13 @@ class FrozenBatchNorm2d(torch.nn.Module):
 
 class BackboneBase(pl.LightningModule):
 
+    DOWNSAMPLE_DICT = {
+        32: ('layer4', 2048),
+        16: ('layer3', 1024),
+        8: ('layer2', 512),
+        4: ('layer1', 256),
+    }
+
     def __init__(
         self,
         backbone: nn.Module,
@@ -65,18 +72,21 @@ class BackboneBase(pl.LightningModule):
         downsample_factor: int = 32,
     ) -> None:
         super().__init__()
+        assert downsample_factor in self.DOWNSAMPLE_DICT
+
         for name, parameter in backbone.named_parameters():
             if not train_backbone or 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
                 parameter.requires_grad_(False)
         if return_interm_layers:
             return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
         elif downsample_factor:
-            layer_num = int(math.log(downsample_factor) / math.log(2)) - 1
-            return_layers = {f"layer{layer_num}": "0"}
-        else:
-            return_layers = {'layer4': "0"}
+            return_layers = {self.DOWNSAMPLE_DICT[downsample_factor][0]: "0"}
+        # else:
+        #     return_layers = {'layer4': "0"}
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
-        self.num_channels = num_channels
+        # Ignore this - assume we use ResNet50
+        # self.num_channels = num_channels
+        self.num_channels = self.DOWNSAMPLE_DICT[downsample_factor][1]
 
     def forward(self, tensor_list: NestedTensor) -> NestedTensor:
         xs = self.body(tensor_list.tensors)
