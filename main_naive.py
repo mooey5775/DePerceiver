@@ -154,6 +154,7 @@ def main(args):
 
     losses = ['labels', 'boxes', 'cardinality']
     
+    # Use DeTR set criterion
     criterion = SetCriterion(91, matcher=matcher, weight_dict=weight_dict, eos_coef=args.eos_coef, losses=losses)
 
     model = NaiveDePerceiver(
@@ -167,6 +168,7 @@ def main(args):
 
     datamodule = CocoDataModule(args)
 
+    # logging for wandb visualizations
     lr_monitor = LearningRateMonitor()
     wandb_logger = WandbLogger(
         name=args.run_name,

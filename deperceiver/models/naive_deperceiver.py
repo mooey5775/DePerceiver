@@ -66,12 +66,14 @@ class NaiveDePerceiver(pl.LightningModule):
         else:
             srcs = []
             masks = []
+            # generate inputs for all scales
             for feature in features:
                 src, mask_scale = feature.decompose()
                 assert mask_scale is not None
                 srcs.append(src)
                 masks.append(mask_scale)            
 
+            # combine projections and postitional encodings inputs for all the scales
             multiscale_inputs = []
             mask_all_scales = []
             for i, model in enumerate(self.input_proj):
