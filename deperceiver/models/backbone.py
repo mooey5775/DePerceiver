@@ -84,11 +84,9 @@ class BackboneBase(pl.LightningModule):
             return_layers = {self.DOWNSAMPLE_DICT[downsample_factor][0]: str(i) for i, downsample_factor in enumerate([8, 16, 32])}
         elif downsample_factor:
             return_layers = {self.DOWNSAMPLE_DICT[downsample_factor][0]: "0"}
-        # else:
-        #     return_layers = {'layer4': "0"}
+        
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
-        # Ignore this - assume we use ResNet50
-        # self.num_channels = num_channels
+
         if multiscale:
             self.num_channels = [self.DOWNSAMPLE_DICT[downsample_factor][1] for downsample_factor in [8, 16, 32]]
         else:
@@ -147,7 +145,6 @@ class Joiner(pl.LightningModule):
         return out, pos
 
 
-# TODO: replace this with Hydra
 def build_backbone(args):
     position_embedding = build_position_encoding(args)
     train_backbone = args.lr_backbone > 0

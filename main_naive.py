@@ -47,17 +47,17 @@ def get_args_parser():
                         help="Number of layers per block in the transformer")
     parser.add_argument('--dec_layers', default=3, type=int,
                         help="Number of decoding layers in the transformer")
-    # parser.add_argument('--dim_feedforward', default=2048, type=int,
-    #                     help="Intermediate size of the feedforward layers in the transformer blocks")
+    parser.add_argument('--dim_feedforward', default=2048, type=int,
+                        help="Intermediate size of the feedforward layers in the transformer blocks")
     parser.add_argument('--hidden_dim', default=256, type=int,
                         help="Size of the embeddings (dimension of the transformer)")
-    # parser.add_argument('--dropout', default=0.1, type=float,
-    #                     help="Dropout applied in the transformer")
-    # parser.add_argument('--nheads', default=8, type=int,
-    #                     help="Number of attention heads inside the transformer's attentions")
+    parser.add_argument('--dropout', default=0.1, type=float,
+                        help="Dropout applied in the transformer")
+    parser.add_argument('--nheads', default=8, type=int,
+                        help="Number of attention heads inside the transformer's attentions")
     parser.add_argument('--num_queries', default=100, type=int,
                         help="Number of query slots")
-    # parser.add_argument('--pre_norm', action='store_true')
+    parser.add_argument('--pre_norm', action='store_true')
 
     # * Segmentation
     parser.add_argument('--masks', action='store_true',
