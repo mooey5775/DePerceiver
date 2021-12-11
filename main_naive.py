@@ -24,6 +24,12 @@ def get_args_parser():
     parser.add_argument('--clip_max_norm', default=0.1, type=float,
                         help='gradient clipping max norm')
 
+    # Logging params
+    parser.add_argument('--no-wandb', dest='wandb', action='store_false',
+                        help='disable wandb logging')
+    parser.add_argument('--project', default='deperceiver', type=str,
+                        help='wandb project name')
+
     # Model parameters
     parser.add_argument('--frozen_weights', type=str, default=None,
                         help="Path to the pretrained model. If set, only the mask head will be trained")
@@ -170,12 +176,13 @@ def main(args):
 
     # logging for wandb visualizations
     lr_monitor = LearningRateMonitor()
-    wandb_logger = WandbLogger(
-        name=args.run_name,
-        project='DePerceiver',
-        log_model=True,
-        entity='deperceiver',
-    )
+    if args.wandb:
+        wandb_logger = WandbLogger(
+            name=args.run_name,
+            project=args.project,
+            log_model=True,
+            #entity='deperceiver',
+        )
 
     checkpoint_callback = ModelCheckpoint(
         monitor='val/ap',
@@ -195,12 +202,13 @@ def main(args):
         default_root_dir=args.output_dir,
         gradient_clip_val=args.clip_max_norm,
         max_epochs=args.epochs,
-        logger=wandb_logger,
+        logger=wandb_logger if args.wandb else True,
         replace_sampler_ddp=False,
         callbacks=[lr_monitor, checkpoint_callback],
         resume_from_checkpoint=args.resume_from_checkpoint,
     )
-    wandb_logger.watch(model)
+    if args.wandb:
+        wandb_logger.watch(model)
     
     trainer.fit(model, datamodule=datamodule)
 
