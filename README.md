@@ -4,6 +4,8 @@ This is the PyTorch Lightning code for DePerceiver. DePerceiver is a model that 
 
 We propose DePerceiver, which makes use of the Perceiver IO architecture in place of the transformer. Perceiver IO is a transformer-like architecture that has linear complexity, which allows the model to run more efficiently and to use larger feature maps (or multi-scale).
 
+![Model Diagram](model_diagram.png)
+
 This code is our attempt to improve on object detection baselines with the DePerceiver model. The COCO 2017 dataset needs to be downloaded to train and evaluate the models in this repository. Once that is complete, the model can be trained with `main_naive.py`. The implementation details of the architecture are present under the `deperceiver/` folder.
 
 For a more detailed description of the project see our writeup here : ADD LINK TO PAPER
