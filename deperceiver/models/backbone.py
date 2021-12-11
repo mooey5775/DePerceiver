@@ -56,6 +56,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
 
 class BackboneBase(pl.LightningModule):
 
+    # layer name and channel size based on downsample factor
     DOWNSAMPLE_DICT = {
         32: ('layer4', 2048),
         16: ('layer3', 1024),
@@ -78,17 +79,18 @@ class BackboneBase(pl.LightningModule):
         for name, parameter in backbone.named_parameters():
             if not train_backbone or 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
                 parameter.requires_grad_(False)
+        
+        # choose layers of backbone to return based on downsampling factor and multiscale version
         if return_interm_layers:
             return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
         elif multiscale:
             return_layers = {self.DOWNSAMPLE_DICT[downsample_factor][0]: str(i) for i, downsample_factor in enumerate([8, 16, 32])}
         elif downsample_factor:
             return_layers = {self.DOWNSAMPLE_DICT[downsample_factor][0]: "0"}
-        # else:
-        #     return_layers = {'layer4': "0"}
+        
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
-        # Ignore this - assume we use ResNet50
-        # self.num_channels = num_channels
+
+        # record number of channels based on downsample factor and multiscale version
         if multiscale:
             self.num_channels = [self.DOWNSAMPLE_DICT[downsample_factor][1] for downsample_factor in [8, 16, 32]]
         else:
@@ -124,6 +126,7 @@ class Backbone(BackboneBase):
         super().__init__(backbone, num_channels, train_backbone=train_backbone, return_interm_layers=return_interm_layers, downsample_factor=downsample_factor, multiscale=multiscale)
 
 
+# Merge backbone features and position encodings
 class Joiner(pl.LightningModule):
 
     def __init__(
@@ -147,7 +150,6 @@ class Joiner(pl.LightningModule):
         return out, pos
 
 
-# TODO: replace this with Hydra
 def build_backbone(args):
     position_embedding = build_position_encoding(args)
     train_backbone = args.lr_backbone > 0

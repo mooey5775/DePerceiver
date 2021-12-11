@@ -24,6 +24,12 @@ def get_args_parser():
     parser.add_argument('--clip_max_norm', default=0.1, type=float,
                         help='gradient clipping max norm')
 
+    # Logging params
+    parser.add_argument('--no-wandb', dest='wandb', action='store_false',
+                        help='disable wandb logging')
+    parser.add_argument('--project', default='deperceiver', type=str,
+                        help='wandb project name')
+
     # Model parameters
     parser.add_argument('--frozen_weights', type=str, default=None,
                         help="Path to the pretrained model. If set, only the mask head will be trained")
@@ -47,17 +53,17 @@ def get_args_parser():
                         help="Number of layers per block in the transformer")
     parser.add_argument('--dec_layers', default=3, type=int,
                         help="Number of decoding layers in the transformer")
-    # parser.add_argument('--dim_feedforward', default=2048, type=int,
-    #                     help="Intermediate size of the feedforward layers in the transformer blocks")
+    parser.add_argument('--dim_feedforward', default=2048, type=int,
+                        help="Intermediate size of the feedforward layers in the transformer blocks")
     parser.add_argument('--hidden_dim', default=256, type=int,
                         help="Size of the embeddings (dimension of the transformer)")
-    # parser.add_argument('--dropout', default=0.1, type=float,
-    #                     help="Dropout applied in the transformer")
-    # parser.add_argument('--nheads', default=8, type=int,
-    #                     help="Number of attention heads inside the transformer's attentions")
+    parser.add_argument('--dropout', default=0.1, type=float,
+                        help="Dropout applied in the transformer")
+    parser.add_argument('--nheads', default=8, type=int,
+                        help="Number of attention heads inside the transformer's attentions")
     parser.add_argument('--num_queries', default=100, type=int,
                         help="Number of query slots")
-    # parser.add_argument('--pre_norm', action='store_true')
+    parser.add_argument('--pre_norm', action='store_true')
 
     # * Segmentation
     parser.add_argument('--masks', action='store_true',
@@ -154,6 +160,7 @@ def main(args):
 
     losses = ['labels', 'boxes', 'cardinality']
     
+    # Use DeTR set criterion
     criterion = SetCriterion(91, matcher=matcher, weight_dict=weight_dict, eos_coef=args.eos_coef, losses=losses)
 
     model = NaiveDePerceiver(
@@ -167,13 +174,15 @@ def main(args):
 
     datamodule = CocoDataModule(args)
 
+    # logging for wandb visualizations
     lr_monitor = LearningRateMonitor()
-    wandb_logger = WandbLogger(
-        name=args.run_name,
-        project='DePerceiver',
-        log_model=True,
-        entity='deperceiver',
-    )
+    if args.wandb:
+        wandb_logger = WandbLogger(
+            name=args.run_name,
+            project=args.project,
+            log_model=True,
+            #entity='deperceiver',
+        )
 
     checkpoint_callback = ModelCheckpoint(
         monitor='val/ap',
@@ -193,12 +202,13 @@ def main(args):
         default_root_dir=args.output_dir,
         gradient_clip_val=args.clip_max_norm,
         max_epochs=args.epochs,
-        logger=wandb_logger,
+        logger=wandb_logger if args.wandb else True,
         replace_sampler_ddp=False,
         callbacks=[lr_monitor, checkpoint_callback],
         resume_from_checkpoint=args.resume_from_checkpoint,
     )
-    wandb_logger.watch(model)
+    if args.wandb:
+        wandb_logger.watch(model)
     
     trainer.fit(model, datamodule=datamodule)
 
