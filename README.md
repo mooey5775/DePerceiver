@@ -63,6 +63,10 @@ python -m torch.distributed.run --nproc_per_node=4 main_naive.py --gpus 4 --coco
 
 Using this, we can train and evaluate our model. You can use wandb to visualize the model performance.
 
+# Models
+
+Trained models for 32, 16, and 8 downscaling after 50 epochs are available here: [Models](https://drive.google.com/drive/folders/1bZ_R9jnn0xuNJ-kxHw-XcorziewlgCtW?usp=sharing)
+
 # License
 
 DePerceiver is released under the Apache 2.0 license. Please see the [LICENSE](LICENSE) file for more information.
